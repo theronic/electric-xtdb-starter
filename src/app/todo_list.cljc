@@ -3,6 +3,7 @@
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
+            #?(:clj [xtdb :as xdb])
             [xtdb.api #?(:clj :as :cljs :as-alias) xt]))
 
 (e/def !xtdb)
@@ -65,8 +66,8 @@
 
 (e/defn Todo-list []
   (e/server
-    (binding [!xtdb user/!xtdb
-              db (new (db/latest-db> user/!xtdb))]
+    (binding [!xtdb xdb/!xtdb
+              db (new (db/latest-db> xdb/!xtdb))]
       (e/client
         (dom/link (dom/props {:rel :stylesheet :href "/todo-list.css"}))
         (dom/h1 (dom/text "minimal todo list"))

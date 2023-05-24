@@ -1,22 +1,13 @@
 (ns user ; Must be ".clj" file, Clojure doesn't auto-load user.cljc
   (:require clojure.java.io
-            [xtdb.api :as xt]))
+            [xtdb.api :as xt]
+            [xtdb :as xdb]))
 
 ; lazy load dev stuff - for faster REPL startup and cleaner dev classpath
 (def start-electric-server! (delay @(requiring-resolve 'electric-server-java8-jetty9/start-server!)))
 ;(def start-electric-server! (delay @(requiring-resolve 'electric-server-java11-jetty10/start-server!)))
 (def shadow-start! (delay @(requiring-resolve 'shadow.cljs.devtools.server/start!)))
 (def shadow-watch (delay @(requiring-resolve 'shadow.cljs.devtools.api/watch)))
-
-(defn start-xtdb! [] ; from XTDB’s getting started: xtdb-in-a-box
-  (assert (= "true" (System/getenv "XTDB_ENABLE_BYTEUTILS_SHA1")))
-  (letfn [(kv-store [dir] {:kv-store {:xtdb/module 'xtdb.rocksdb/->kv-store
-                                      :db-dir (clojure.java.io/file dir)
-                                      :sync? true}})]
-    (xt/start-node
-      {:xtdb/tx-log (kv-store "data/dev/tx-log")
-       :xtdb/document-store (kv-store "data/dev/doc-store")
-       :xtdb/index-store (kv-store "data/dev/index-store")})))
 
 (def electric-server-config
   {:host "0.0.0.0", :port 8080, :resources-path "public"})
@@ -29,8 +20,8 @@
 
 (defn main [& args]
   (println "Starting XTDB...")
-  (alter-var-root #'!xtdb (constantly (start-xtdb!)))
-  (comment (.close !xtdb))
+  (alter-var-root #'xdb/!xtdb (constantly (xdb/start-xtdb!)))
+  (comment (.close xdb/!xtdb))
   (println "Starting Electric compiler...")
   (@shadow-start!) ; serves index.html as well
   (@shadow-watch :dev) ; depends on shadow server
@@ -43,8 +34,8 @@
   (hyperfiddle.rcf/enable!) ; turn on RCF after all transitive deps have loaded
 
   ; debug XTDB protocol reloading issues
-  (type !xtdb)
-  (def db (xt/db !xtdb))
+  (type xdb/!xtdb)
+  (def db (xt/db xdb/!xtdb))
   (xt/q db '{:find [(pull e [:xt/id :user/name])]
              :in [needle]
              :where [[e :user/name name]
